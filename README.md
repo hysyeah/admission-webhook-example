@@ -12,6 +12,6 @@ admission-webhook-example
 3. 部署Deployment
 `kubectl apply -f deployment.yaml`
 
-4. 测试验证
-4.1 新建一个`pod`,`kubectl apply -f mycur.yaml`,查看`pod`的`label`
+4. 测试验证  
+4.1 新建一个`pod`,`kubectl apply -f mycur.yaml`,查看`pod`的`label`  
 4.2 新建`configmap`,`kubectl apply -f configmap.yaml`
