@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-webhook
+  template:
+    metadata:
+      labels:
+        app: pod-webhook
+    spec:
+      containers:
+      - name: pod-webhook
+        image: hysyeah/pod-webhook:v3
+        imagePullPolicy: IfNotPresent
+#        command: ["sleep", "9890809"]
+        command: ["/app/main"]
+        args: ["-tls-cert-file=/keys/tls.crt","-tls-private-key-file=/keys/tls.key"]
+#        args:
+#        - -tls-cert-file /keys/tls.crt
+#        - -tls-private-key-file /keys/tls.key
+        ports:
+        - containerPort: 443
+        volumeMounts:
+        - name: tls-keys
+          mountPath: /keys
+      volumes:
+        - name: tls-keys
+          secret:
+            secretName: pod-webhook-tls
+            items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-webhook
+spec:
+  selector:
+    app: pod-webhook
+  ports:
+    - name: tcp
+      port: 443
+      targetPort: 443
+#  type: NodePort
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: pod-webhook
+webhooks:
+  - name: pod.webhook.hysyeah.com
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    failurePolicy: Ignore
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    clientConfig:
+      # base64 -w 0 ca.pem
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EUXlNVEF5TXpneE4xb1hEVE16TURReE9EQXlNemd4TjFvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTERtCi9KaUNjRlhYS2tkcWlXczdnMzM0WHF2cGIrMVhhU3d1U3hBZ2o3NlFyYk1PRnBKOUxMZ3VUbDVsdHEzU3VFK2kKK1FOcHE3UmxBcDJ4UzJ2RlpqU1pvN3loNFBtZVRvaFgyV1R0eWdiZjFsK21udjhqNzBWK1FiOW5SOHVwdVFFSgpCbVZlVTUyRkxtZnRVMXNlUnZnUWdQV0M3YzhMOEI5T3picXV1R3hEbUJUZTJ4cFREYVlpTkNLTFpTWi9OeFFXCkNRa1dlNzhuZ0lhdzloV2c3WitRQUpWR3M3MFRXLzE4SlBQaHJiQU9rVkFyMk1wRlNIR2pTS2JCd0tHK2pxYmcKOEpoaFZvL21HWkVrTjlZU09vTWZ6bFdmMlQ5VEd1Y3hqbVBCSERMc0JmN2hRaWFVMjlQUXkwV0NFT0Jldy9uVgpkMDlLZW1iZmo5Mk1DVXFiTnUwQ0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZGTktvTlFyV2NuT0oyTlBldFM4TE5LMVhWTnBNQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBR1R2ajZFS0NJcmptcG9qWTZoRApnTjdrbUhlS3R1VFFVSFBCWnVTMGtYVVlsaE14S1c5eXBXL2lkUG5oZkdQcGtxR3pqSjFnUStQaEpTTWlvSDgyCkRjK3gwTzZtM0xveXJlS2R5dDVwaDduRWFydUx5endreUtVdU9kK2h4R2c2bFhOQVQwVTN4Nk5SaFN1OG1pOU8KeDJsM09yWXZFZUZMa3FCVkNxeVA4VlFjbGgxMTluR1JVV0tQWFJ2cGdPNHBFRFNydFdnWVoxNGFBaXNYbWkzbAo0aE91aGI3ZGZrcHA4L1E1Tmhvd2NtbW1FNG1sTFA1WXREM1BSVk04eXY4UnBsdTRGcGNvcDFXNkdMTHg3MDBYCmowOGkzeTJvU0ZwYTBSOXg1aHhIYm9XbVQzOGxSMEJwMWtpL1lIeXEzR0t3OGxEWG4vQ3o4UnQ3TUJiVFBobjEKZTAwPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+      service:
+        name: pod-webhook
+        namespace: default
+        path: "/add-label"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: pod-webhook
+webhooks:
+  - name:  pod.webhook.hysyeah.com
+    clientConfig:
+      service:
+        name: pod-webhook
+        namespace: default
+        path: "/configmaps"
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EUXlNVEF5TXpneE4xb1hEVE16TURReE9EQXlNemd4TjFvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTERtCi9KaUNjRlhYS2tkcWlXczdnMzM0WHF2cGIrMVhhU3d1U3hBZ2o3NlFyYk1PRnBKOUxMZ3VUbDVsdHEzU3VFK2kKK1FOcHE3UmxBcDJ4UzJ2RlpqU1pvN3loNFBtZVRvaFgyV1R0eWdiZjFsK21udjhqNzBWK1FiOW5SOHVwdVFFSgpCbVZlVTUyRkxtZnRVMXNlUnZnUWdQV0M3YzhMOEI5T3picXV1R3hEbUJUZTJ4cFREYVlpTkNLTFpTWi9OeFFXCkNRa1dlNzhuZ0lhdzloV2c3WitRQUpWR3M3MFRXLzE4SlBQaHJiQU9rVkFyMk1wRlNIR2pTS2JCd0tHK2pxYmcKOEpoaFZvL21HWkVrTjlZU09vTWZ6bFdmMlQ5VEd1Y3hqbVBCSERMc0JmN2hRaWFVMjlQUXkwV0NFT0Jldy9uVgpkMDlLZW1iZmo5Mk1DVXFiTnUwQ0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZGTktvTlFyV2NuT0oyTlBldFM4TE5LMVhWTnBNQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBR1R2ajZFS0NJcmptcG9qWTZoRApnTjdrbUhlS3R1VFFVSFBCWnVTMGtYVVlsaE14S1c5eXBXL2lkUG5oZkdQcGtxR3pqSjFnUStQaEpTTWlvSDgyCkRjK3gwTzZtM0xveXJlS2R5dDVwaDduRWFydUx5endreUtVdU9kK2h4R2c2bFhOQVQwVTN4Nk5SaFN1OG1pOU8KeDJsM09yWXZFZUZMa3FCVkNxeVA4VlFjbGgxMTluR1JVV0tQWFJ2cGdPNHBFRFNydFdnWVoxNGFBaXNYbWkzbAo0aE91aGI3ZGZrcHA4L1E1Tmhvd2NtbW1FNG1sTFA1WXREM1BSVk04eXY4UnBsdTRGcGNvcDFXNkdMTHg3MDBYCmowOGkzeTJvU0ZwYTBSOXg1aHhIYm9XbVQzOGxSMEJwMWtpL1lIeXEzR0t3OGxEWG4vQ3o4UnQ3TUJiVFBobjEKZTAwPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    rules:
+      - operations: [ "CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["apps", ""]
+        apiVersions: ["v1"]
+        resources: ["configmaps"]
+    failurePolicy: Ignore
+    sideEffects: None
+    admissionReviewVersions:
+      - v1

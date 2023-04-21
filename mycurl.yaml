@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-curl
+  labels:
+    app: my-curl
+spec:
+  containers:
+    - name: my-curl
+      image: hysyeah/my-curl:v1
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 8080
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-curl
+spec:
+  selector:
+    app: my-curl
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: NodePort

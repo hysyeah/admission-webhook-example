@@ -1,0 +1,16 @@
+{
+  "CN": "pod-webhook",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Columbia",
+      "O": "pod-webhook",
+      "OU": "CA",
+      "ST": "South Carolina"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "CN": "pod-webhook.default.svc",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Columbia",
+      "O": "pod-webhook",
+      "OU": "PodPreset Webhook",
+      "ST": "South Carolina"
+    }
+  ]
+}
