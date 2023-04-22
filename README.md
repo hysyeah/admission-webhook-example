@@ -6,8 +6,9 @@ admission-webhook-example
 `nerdctl build -t hysyeah/pod-webhook:v3 .`
 
 2. 配置生成证书  
-2.1 拷贝/etc/kubernetes/pki/ca.crt,ca.key到./pki目录下  
-2.2 运行gen-certs.sh(会生成对应的证书和创建secret)
+2.1 先把pki/generated/下生成的证书删除(但不包括gen-certs.sh)  
+2.2 拷贝/etc/kubernetes/pki/ca.crt,ca.key到./pki目录下  
+2.3 运行gen-certs.sh(会生成对应的证书和创建secret)
 
 3. 部署Deployment
 `kubectl apply -f deployment.yaml`
