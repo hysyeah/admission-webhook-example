@@ -153,7 +153,7 @@ func main() {
 	http.HandleFunc("/configmaps", serveConfigmaps)
 	http.HandleFunc("/readyz", func(w http.ResponseWriter, req *http.Request) { w.Write([]byte("ok")) })
 	server := &http.Server{
-		Addr:      fmt.Sprintf(":%d", 443),
+		Addr:      fmt.Sprintf(":%d", 7443),
 		TLSConfig: ConfigTLS(config),
 	}
 	server.ListenAndServeTLS("", "")
