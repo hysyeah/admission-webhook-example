@@ -19,7 +19,7 @@ spec:
         command: ["/app/main"]
         args: ["-tls-cert-file=/keys/tls.crt","-tls-private-key-file=/keys/tls.key"]
         ports:
-        - containerPort: 443
+        - containerPort: 8443
         volumeMounts:
         - name: tls-keys
           mountPath: /keys
@@ -33,10 +33,20 @@ spec:
             - key: tls.key
               path: tls.key
 
-
 ---
-c
-#  type: NodePort
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-webhook
+spec:
+  selector:
+    app: pod-webhook
+  ports:
+    - name: pod-webhook
+      port: 8443
+      targetPort: 8443
+
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -54,7 +64,7 @@ webhooks:
           - UPDATE
         resources:
           - pods
-    failurePolicy: Ignore
+    failurePolicy: Fail
     sideEffects: None
     admissionReviewVersions:
       - v1
@@ -62,11 +72,12 @@ webhooks:
       # base64 -w 0 ca.crt
       caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EUXlNakV3TlRneE9Gb1hEVE16TURReE9URXdOVGd4T0Zvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTWR6CnM0VFJyZzZRQTR1eU1aNFppTHJpTXdSdFZBK1VmMnRYZmVmdW9MeVN1MmF3T1U3NnpVWFY1QkpyMHY1YlQ2MCsKTlpxYjFkenJ5SHExMytMajNYS0NZVUUxNjRBYWZkYStHUWlFN3p4SDNzT01yYXhJTzZYMkFIN0Q2UE5GenZhQgpzdUhxN2RkbHA5QnRlSHlXcHpCb1ViNWRiVGFlNUdEUXl1enFGaVVLZnAwTWxHbUNHZ1pEcXZNeUR1Sm54SEI2ClVhc3hHSXB0bUI2OGtGUEcrM0JpcDlmTGlRU2Z6cUEwei8zUGtrOEFZSGxoMXFSZDRDN0FUTW1BTWZsR1pRNEMKS1lTb3BsU2tQUjBwdHRNVUJGVUdtWllXNDZrSE1JVk5VUmltbC9rS2xNdUUvSW1wL2FxN3kwdCtNUTFWV09xZwpya05PWWEyWGlEQ0tndGN6QnFrQ0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZQRlpmN0xNbm54TUVVTStsdlVPcDF2cDUyNjFNQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQURGU3RUdlhvaHhqbnkwa1R6YQoxcThCS1BSQlU0REFPNDV3ZUNXNjBaNVcya2JrMmpSNWdHREE2dlZNbkVNY1M3aitNTWJKc2xDTFNwemRHZWxTClpuY2RwRWsxQnM2YTRlK2grbmMvT2txSE9xMXQ2Q3dQVEtkMkZOUEwwbzdDTE9BeHAyQU5UZWdSYVBVTG5weDQKQ3dEUFZuRTVzcElUempYbXpuSDVrL3BwR3dvdk1YN1IrbnQ3VkQ3SkZHUkZuTkVTaHdab0NQbTVyeUcrREZxNgozMFZKNGsyUGZ2Mi9STTRrQVFkNHdkandnQTIxVUpueXV5aW1lczhseVhhRTRwMWxFZUdUVGN2TmdSTHBxY3dhCkhYMkVmZlNLaGdQd0tYdmFyWjYyU3RqZklWM1NEN3RJY1hoaUtCUEhZbDVRazZUc0ZQdGczYXhPeDI4bnlNNWgKRmlNPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
        # 如果是集群外部服务,则需要指定URL并注释掉service
-#      url: https://127.0.0.1:443/add-label
+#      url: https://127.0.0.1:8443/add-label
       service:
         name: pod-webhook
         namespace: default
         path: "/add-label"
+        port: 8443
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -76,18 +87,19 @@ webhooks:
   - name:  pod.webhook.hysyeah.com
     clientConfig:
       # 如果是集群外部服务,则需要指定URL并注释掉service
-#      url: https://127.0.0.1:7443/configmaps
+#      url: https://127.0.0.1:8443/configmaps
       service:
         name: pod-webhook
         namespace: default
         path: "/configmaps"
+        port: 8443
       caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EUXlNakV3TlRneE9Gb1hEVE16TURReE9URXdOVGd4T0Zvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTWR6CnM0VFJyZzZRQTR1eU1aNFppTHJpTXdSdFZBK1VmMnRYZmVmdW9MeVN1MmF3T1U3NnpVWFY1QkpyMHY1YlQ2MCsKTlpxYjFkenJ5SHExMytMajNYS0NZVUUxNjRBYWZkYStHUWlFN3p4SDNzT01yYXhJTzZYMkFIN0Q2UE5GenZhQgpzdUhxN2RkbHA5QnRlSHlXcHpCb1ViNWRiVGFlNUdEUXl1enFGaVVLZnAwTWxHbUNHZ1pEcXZNeUR1Sm54SEI2ClVhc3hHSXB0bUI2OGtGUEcrM0JpcDlmTGlRU2Z6cUEwei8zUGtrOEFZSGxoMXFSZDRDN0FUTW1BTWZsR1pRNEMKS1lTb3BsU2tQUjBwdHRNVUJGVUdtWllXNDZrSE1JVk5VUmltbC9rS2xNdUUvSW1wL2FxN3kwdCtNUTFWV09xZwpya05PWWEyWGlEQ0tndGN6QnFrQ0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZQRlpmN0xNbm54TUVVTStsdlVPcDF2cDUyNjFNQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQURGU3RUdlhvaHhqbnkwa1R6YQoxcThCS1BSQlU0REFPNDV3ZUNXNjBaNVcya2JrMmpSNWdHREE2dlZNbkVNY1M3aitNTWJKc2xDTFNwemRHZWxTClpuY2RwRWsxQnM2YTRlK2grbmMvT2txSE9xMXQ2Q3dQVEtkMkZOUEwwbzdDTE9BeHAyQU5UZWdSYVBVTG5weDQKQ3dEUFZuRTVzcElUempYbXpuSDVrL3BwR3dvdk1YN1IrbnQ3VkQ3SkZHUkZuTkVTaHdab0NQbTVyeUcrREZxNgozMFZKNGsyUGZ2Mi9STTRrQVFkNHdkandnQTIxVUpueXV5aW1lczhseVhhRTRwMWxFZUdUVGN2TmdSTHBxY3dhCkhYMkVmZlNLaGdQd0tYdmFyWjYyU3RqZklWM1NEN3RJY1hoaUtCUEhZbDVRazZUc0ZQdGczYXhPeDI4bnlNNWgKRmlNPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
     rules:
       - operations: [ "CREATE", "UPDATE", "DELETE"]
         apiGroups: ["apps", ""]
         apiVersions: ["v1"]
         resources: ["configmaps"]
-    failurePolicy: Ignore
+    failurePolicy: Fail
     sideEffects: None
     admissionReviewVersions:
       - v1

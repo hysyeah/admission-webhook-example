@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: my-curl
-      image: hysyeah/my-curl:v1
+      image: hys2023/http:8080
       imagePullPolicy: IfNotPresent
       ports:
         - containerPort: 8080
