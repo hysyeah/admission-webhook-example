@@ -9,15 +9,14 @@ admission-webhook-example
 如果使用的容器运行时是docker可以使用下面的命令构建镜像
 `docker build -t hysyeah/pod-webhook:v3 .`
 
-2. 配置生成证书  
-2.1 先把pki/generated/下生成的证书删除(但不包括gen-certs.sh)  
-2.2 拷贝/etc/kubernetes/pki/ca.crt,ca.key到./pki目录下(k3s /var/lib/rancher/k3s/server/tls)
-2.3 运行gen-certs.sh(会生成对应的证书和创建secret)
+2. 配置生成证书
+2.1 拷贝/etc/kubernetes/pki/ca.crt,ca.key到./pki目录下(k3s /var/lib/rancher/k3s/server/tls)
+2.2 运行gen-certs.sh(会生成对应的证书和创建secret)
 
 3. 部署Deployment或者直接部署二进制文件
 `kubectl apply -f deployment.yaml`
 
-直接运行服务，需要修改deployment.yaml中相应的字段，ValidatingWebhookConfiguration，MutatingWebhookConfiguration
+或者直接运行服务(保证apiserver在同一个网络(k3s的apiserver有可能是127.0.0.1:6443))，需要修改deployment.yaml中相应的字段，ValidatingWebhookConfiguration，MutatingWebhookConfiguration
 `go run *.go -tls-cert-file=./pki/generated/pod-webhook.pem -tls-private-key-file=./pki/generated/pod-webhook-key.pem`
 
 4. 测试验证  
